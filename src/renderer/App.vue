@@ -1,15 +1,28 @@
 <template>
     <div id="app">
         <div class="ui container">
-            <div class="ui grid">
+            <div class="ui grid" @keyup="update_current">
                 <div class="row">
                     <div class="sixteen wide column">
-                        <h2 class="ui header padding top">CUP Online Judge Problem Creator</h2>
+                        <h2 class="ui headerjadding top">CUP Online Judge Problem Creator</h2>
                     </div>
                 </div>
                 <div class="row">
                     <div class="sixteen wide column">
                         <button class="ui primary button" @click="load">Load Problem</button>
+                        <a class="ui button" @click="add_problem">
+                            <i class="plus icon"></i>
+                            Add Problem
+                        </a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="sixteen wide column">
+                        <div class="ui buttons">
+                            <a @click="show_problem(index)"
+                               :class="'ui primary basic button '+(current_tag === index-1?'active':'')"
+                               v-for="index in Array.from(Array(problem_list.length).keys())">{{problem_list[index].title||"New Problem"}}</a>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
@@ -18,23 +31,23 @@
                             <div class="ui label">
                                 Title
                             </div>
-                            <input type="text" v-model="title"></div>
+                            <input type="text" v-model="title" title=""></div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="eight wide column">
-                        <div class="ui labeled input">
+                        <div :class="'ui labeled input '+(isNaN(time)?'error':'')">
                             <div class="ui label">
                                 Time
                             </div>
-                            <input type="text" v-model="time"></div>
+                            <input type="text" v-model="time" title=""></div>
                     </div>
                     <div class="eight wide column">
-                        <div class="ui labeled input">
+                        <div :class="'ui labeled input '+(isNaN(memory)?'error':'')">
                             <div class="ui label">
                                 Memory
                             </div>
-                            <input type="text" v-model="memory"></div>
+                            <input title="" type="text" v-model="memory"></div>
                     </div>
                 </div>
                 <div class="row">
@@ -43,14 +56,14 @@
                             <div class="ui label">
                                 Source
                             </div>
-                            <input type="text" v-model="source"></div>
+                            <input title="" type="text" v-model="source"></div>
                     </div>
                     <div class="eight wide column">
                         <div class="ui labeled input">
                             <div class="ui label">
                                 Label
                             </div>
-                            <input type="text" v-model="label"></div>
+                            <input title="" type="text" v-model="label"></div>
                     </div>
                 </div>
                 <div class="row">
@@ -160,7 +173,7 @@
 
 <script>
 	export default {
-		name: 'electron_vue_project',
+		name: 'CUP Online Judge Problem Creator',
 		data: function () {
 			return {
 				title: "",
@@ -178,25 +191,74 @@
 				output_files: [],
 				prepend: [],
 				append: [],
-				spj: []
+				spj: "",
+				problem_list: {0: {}, length: 1},
+				current_tag: 0
 			};
 		},
 		methods: {
-			load: function (e) {
-				const that = this;
+			save_current: function () {
+				this.problem_list[this.current_tag] = {
+					title: this.title,
+					time: this.time,
+					memory: this.memory,
+					source: this.source,
+					description: this.description,
+					input: this.input,
+					output: this.output,
+					label: this.label,
+					sample_input: this.sample_input,
+					sample_output: this.sample_output,
+					hint: this.hint,
+					input_files: this.input_files,
+					output_files: this.output_files,
+					prepend: this.prepend,
+					append: this.append,
+					spj: this.spj
+				};
+			},
+			clear_current: function () {
+				this.title = this.source = this.description = this.input = this.output = this.label
+					= this.sample_input = this.sample_output = this.hint = this.spj = "";
+				this.time = this.memory = 0;
+				this.input_files = [];
+				this.output_files = [];
+				this.prepend = [];
+				this.append = [];
+			},
+			add_problem: function () {
+				this.save_current();
+				this.problem_list[(this.current_tag = this.problem_list.length++)] = {};
+				this.clear_current();
+			},
+			update_current: function () {
+				this.save_current();
+			},
+			show_problem: function (index) {
+				const t = this.problem_list[index];
+				this.current_tag = index;
+				Object.assign(this, t);
+			},
+			load: function () {
+				const _that = this;
 				const fs = require("bluebird").promisifyAll(require("fs"));
 				const zlib = require("zlib");
 				this.$electron.ipcRenderer.send("open-file-dialog");
 				this.$electron.ipcRenderer.on("selected-file", async (event, _path) => {
 					const _file_name = _path[0];
-					if(_file_name.lastIndexOf(".rspk") !== -1) {
-						const buffer = await fs.readFileAsync(_path[0]);
-						const unzip_data = await new Promise((resolve,reject)=>{
-							zlib.gunzip(buffer,(err,result)=>{
-								resolve(result.toString());
-							})
+					const buffer = await fs.readFileAsync(_file_name);
+					const unzip_data = await new Promise((resolve, reject) => {
+						zlib.gunzip(buffer, (err, result) => {
+							resolve(result.toString());
 						})
-						const data = JSON.parse(unzip_data);
+					});
+					const _data = JSON.parse(unzip_data);
+					let _problem_list = {length: _data.length};
+					let cnt = 0;
+					console.log(_data);
+					for (let data of _data) {
+						console.log(data);
+						let that = {};
 						that.title = data.title;
 						that.time = data.time;
 						that.memory = data.memory;
@@ -212,23 +274,28 @@
 						that.prepend = data.prepend_files;
 						that.append = data.append_files;
 						that.spj = data.special_judge;
+						_problem_list[cnt++] = that;
 					}
+
+					_that.problem_list = _problem_list;
+					_that.current_tag = 0;
+					Object.assign(_that, _problem_list[0]);
 				})
 			},
-			pack: function (e) {
-				const that = this;
+			pack: function () {
+				const _that = this;
 				const fs = require("bluebird").promisifyAll(require("fs"));
 				this.$electron.ipcRenderer.send("open-save-file-dialog");
-				this.$electron.ipcRenderer.on("selected-directory", (event, _path) => {
+				this.$electron.ipcRenderer.on("selected-directory", async (event, _path) => {
 					let input_files = [];
 					let output_files = [];
 					let prepend_files = [];
 					let append_files = [];
 					let spj;
 
-					const readFile = async (source,target)=>{
+					const readFile = async (source, target) => {
 						for (let i of source) {
-							if(typeof i === "string") {
+							if (typeof i === "string") {
 								const content = await fs.readFileAsync(i);
 								const name = path.basename(i);
 								target.push({
@@ -236,50 +303,53 @@
 									content: content
 								});
 							}
-							else{
+							else {
 								target.push(i);
-                            }
-						}
-                    }
-					(async () => {
-						readFile(that.input_files,input_files);
-						readFile(that.output_files,output_files);
-						readFile(that.prepend,prepend_files);
-						readFile(that.append,append_files);
-						if (typeof that.spj === "string" && that.spj.length > 0) {
-							const content = await fs.readFileAsync(that.spj);
-							const name = path.basename(that.spj);
-							spj = {
-								name: name,
-								content: content
 							}
 						}
+					};
+					let result = [];
+					for (let i = 0; i < _that.problem_list.length; ++i) {
+						const that = _that.problem_list[i];
+						const tmp = await (async () => {
+							readFile(that.input_files, input_files);
+							readFile(that.output_files, output_files);
+							readFile(that.prepend, prepend_files);
+							readFile(that.append, append_files);
+							if (typeof that.spj === "string" && that.spj.length > 0) {
+								const content = await fs.readFileAsync(that.spj);
+								const name = path.basename(that.spj);
+								spj = {
+									name: name,
+									content: content
+								}
+							}
 
-						const target = {
-							title: that.title,
-							label: that.label ? that.label.split(" ") : "",
-							time: parseFloat(that.time),
-							memory: parseInt(that.memory),
-							description: that.description,
-							input: that.input,
-							output: that.output,
-							sample_input: that.sample_input,
-							sample_output: that.sample_output,
-							hint: that.hint,
-							source: that.source,
-							input_files: input_files,
-							output_files: output_files,
-							prepend_files: prepend_files,
-							append_files: append_files,
-							special_judge: spj
-						};
-						zlib.gzip(JSON.stringify(target), async (err, result) => {
-							await fs.writeFileAsync(path.join(_path[0], "problem.rspk"), result, () => {
-							})
-							return;
+							return {
+								title: that.title,
+								label: that.label ? that.label.split(" ") : "",
+								time: parseFloat(that.time),
+								memory: parseInt(that.memory),
+								description: that.description,
+								input: that.input,
+								output: that.output,
+								sample_input: that.sample_input,
+								sample_output: that.sample_output,
+								hint: that.hint,
+								source: that.source,
+								input_files: input_files,
+								output_files: output_files,
+								prepend_files: prepend_files,
+								append_files: append_files,
+								special_judge: spj
+							};
+						})();
+						result.push(tmp);
+					}
+					zlib.gzip(JSON.stringify(result), async (err, result) => {
+						await fs.writeFileAsync(path.join(_path[0], "problem.rpk"), result, () => {
 						})
-						return;
-					})();
+					})
 				})
 			}
 		},
@@ -287,11 +357,11 @@
 			console.log(this.$data);
 			const that = this;
 			const holder = document.getElementById('upload_file');
-			holder.ondragover = function (e) {
+			holder.ondragover = function () {
 				document.getElementById("message").innerText = "Release your mouse to upload";
 				return false;
 			};
-			holder.ondragleave = holder.ondragend = function (e) {
+			holder.ondragleave = holder.ondragend = function () {
 				document.getElementById("message").innerText = "Drag your files and drop them here";
 				return false;
 			};
@@ -342,9 +412,5 @@
 </script>
 
 <style>
-    .padding.top {
-        padding-top: 1em;
-    }
-
     /* CSS */
 </style>
