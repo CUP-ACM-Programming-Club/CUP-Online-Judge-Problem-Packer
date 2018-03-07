@@ -55,6 +55,8 @@
   },
   "dependencies": {
     "axios": "^0.16.1",
+    "electron-packager": "^11.1.0",
+    "eslint-friendly-formatter": "^3.0.0",
     "mavon-editor": "^2.4.16",
     "semantic-ui": "^2.3.0",
     "semantic-ui-less": "^2.3.0",
