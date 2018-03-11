@@ -33,7 +33,7 @@ let rendererConfig = {
       {
         test: /\.(js|vue)$/,
         enforce: 'pre',
-        exclude: /node_modules/,
+        exclude: [/node_modules/,/static/],
         use: {
           loader: 'eslint-loader',
           options: {

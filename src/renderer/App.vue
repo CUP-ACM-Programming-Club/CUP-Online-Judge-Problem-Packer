@@ -175,7 +175,7 @@
     /* eslint-disable indent */
 
     export default {
-      name: 'CUP Online Judge Problem Creator',
+      name: 'CUP_Online_Judge_Problem_Creator',
       data: function () {
         return {
           title: '',
@@ -298,7 +298,8 @@
             let appendFiles = []
             let spj
 
-            const readFile = async (source, target) => {
+            const readFile = async (source) => {
+              let target = []
               const path = require('path')
               for (let i of source) {
                 if (typeof i === 'string') {
@@ -306,22 +307,23 @@
                   const name = path.basename(i)
                   target.push({
                     name: name,
-                    content: content
+                    content: content.toString('base64')
                   })
                 } else {
                   target.push(i)
                 }
               }
+              return target
             }
             let result = []
             const path = require('path')
             for (let i = 0; i < _that.problem_list.length; ++i) {
               const that = _that.problem_list[i]
               const tmp = await (async () => {
-                readFile(that.input_files, inputFiles)
-                readFile(that.output_files, outputFiles)
-                readFile(that.prepend, prependFiles)
-                readFile(that.append, appendFiles)
+                inputFiles = await readFile(that.input_files)
+                outputFiles = await readFile(that.output_files)
+                prependFiles = await readFile(that.prepend)
+                appendFiles = await readFile(that.append)
                 if (typeof that.spj === 'string' && that.spj.length > 0) {
                   const content = await fs.readFileAsync(that.spj)
                   const name = path.basename(that.spj)
@@ -330,7 +332,6 @@
                     content: content
                   }
                 }
-
                 return {
                   title: that.title,
                   label: that.label ? that.label.split(' ') : '',
@@ -352,6 +353,8 @@
               })()
               result.push(tmp)
             }
+            // console.log(result)
+              console.log(JSON.stringify(result))
             const zlib = require('zlib')
             zlib.gzip(JSON.stringify(result), async (err, result) => {
               if (err) {
@@ -391,7 +394,7 @@
             } else if (_path.indexOf('spj') !== -1) {
               that.spj = _path
             }
-            console.log(that)
+            // console.log(that)
           }
           message.innerHTML = 'Input files:<br>'
           for (let i of that.input_files) {
