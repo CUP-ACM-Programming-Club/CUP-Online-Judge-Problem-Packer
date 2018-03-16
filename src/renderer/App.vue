@@ -151,6 +151,28 @@
                 </div>
                 <div class="row">
                     <div class="sixteen wide column">
+                        <div class="ui blue labels">
+                            <a class="ui label" v-for="item in input_files">
+                                {{typeof item === "object" ? item.name : require('path').basename(item)}}
+                                <i class="icon close" @click="deleteFile(item,'inputfile')"></i>
+                            </a>
+                            <a class="ui label" v-for="item in output_files">
+                                {{typeof item === "object" ? item.name : require('path').basename(item)}}
+                                <i class="icon close" @click="deleteFile(item,'outputfile')"></i>
+                            </a>
+                            <a class="ui label" v-for="item in prepend">
+                                {{typeof item === "object" ? item.name : require('path').basename(item)}}
+                                <i class="icon close" @click="deleteFile(item,'prependfile')"></i>
+                            </a>
+                            <a class="ui label" v-for="item in append">
+                                {{typeof item === "object" ? item.name : require('path').basename(item)}}
+                                <i class="icon close" @click="deleteFile(item,'appendfile')"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="sixteen wide column">
                         <div class="ui grey inverted vertical masthead center aligned segment" id="upload_file">
                             <h2></h2>
                             <p id="message">Drag your files and drop them here</p>
@@ -241,6 +263,34 @@
           this.current_tag = index
           Object.assign(this, t)
         },
+          deleteFile: function (file, type) {
+        const target = {
+            inputfile: this.input_files,
+            outputfile: this.output_files,
+            prependfile: this.prepend,
+            appendfile: this.append,
+            spj: this.spj
+        }
+        if (typeof file === 'object') {
+            if (type === 'spj') {
+                this.spj = ''
+            } else {
+                let pos = -1
+            for (let i in target[type]) {
+                    if (target[type][i].name === file) {
+                        pos = i
+                    break
+                }
+                }
+                target[type].splice(pos, 1)
+            }
+        } else {
+            let pos = target[type].indexOf(file)
+            if (pos !== -1) {
+                target[type].splice(pos, 1)
+            }
+        }
+      },
         load: function () {
           const _that = this
           const fs = require('bluebird').promisifyAll(require('fs'))
@@ -380,7 +430,7 @@
         }
     holder.ondrop = function (e) {
           e.preventDefault()
-          const message = document.getElementById('message')
+          // const message = document.getElementById('message')
           for (let i = 0; i < e.dataTransfer.files.length; ++i) {
             const _path = e.dataTransfer.files[i].path
             if (_path.lastIndexOf('.in') === _path.length - 3 && that.input_files.indexOf(_path) === -1) {
@@ -396,6 +446,7 @@
             }
             // console.log(that)
           }
+          /*
           message.innerHTML = 'Input files:<br>'
           for (let i of that.input_files) {
             message.innerHTML += `${i}<br>`
@@ -414,6 +465,7 @@
           }
           message.innerHTML += 'Special Judge files:<br>'
           message.innerHTML += `${that.spj}<br>`
+          */
           return false
         }
   }
