@@ -1,7 +1,7 @@
 {
   "name": "CUP_Online_Judge_Problem_Creator",
   "productName": "CUP_Online_Judge_Problem_Creator",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": "Ryan Lee <gxlhybh@gmail.com>",
   "description": "An electron-vue project",
   "license": null,

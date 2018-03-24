@@ -1,6 +1,29 @@
-# test
+# CUP Online Judge Problem Creator
 
-> An electron-vue project
+> CUPOJ专用题目制作工具
+
+使用`npm build:${OS}`进行打包
+```text
+# macOS
+npm run build:darwin
+npm run build:mas
+# Linux
+npm run build:linux
+# Windows
+npm run build:win32
+```
+
+在非Windows系统下打包请先执行
+```text
+brew cask install xquartz
+brew install wine
+```
+
+#### 热加载开发
+```text
+npm run dev
+```
+
 
 #### Build Setup
 
