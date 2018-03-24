@@ -38,14 +38,14 @@
                     <div class="eight wide column">
                         <div :class="'ui labeled input '+(isNaN(time)?'error':'')">
                             <div class="ui label">
-                                Time
+                                Time(s)
                             </div>
                             <input type="text" v-model="time" title=""></div>
                     </div>
                     <div class="eight wide column">
                         <div :class="'ui labeled input '+(isNaN(memory)?'error':'')">
                             <div class="ui label">
-                                Memory
+                                Memory(MB)
                             </div>
                             <input title="" type="text" v-model="memory"></div>
                     </div>
@@ -168,6 +168,10 @@
                                 {{typeof item === "object" ? item.name : require('path').basename(item)}}
                                 <i class="icon close" @click="deleteFile(item,'appendfile')"></i>
                             </a>
+                            <a class="ui label" v-for="item in solution">
+                                {{typeof item === "object" ? item.name : require('path').basename(item)}}
+                                <i class="icon close" @click="deleteFile(item,'solution')"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -194,7 +198,7 @@
 </template>
 
 <script>
-	/* eslint-disable indent,no-tabs */
+    /* eslint-disable indent,no-tabs,no-mixed-spaces-and-tabs */
 
 	export default {
 		name: 'CUP_Online_Judge_Problem_Creator',
@@ -239,6 +243,7 @@
 					output_files: this.output_files,
 					prepend: this.prepend,
 					append: this.append,
+                    solution: this.solution,
 					spj: this.spj
 				}
 				console.log(this.problem_list)
@@ -252,6 +257,7 @@
 				this.output_files = []
 				this.prepend = []
 				this.append = []
+                this.solution = []
 			},
 			add_problem: function () {
 				this.save_current()
@@ -319,7 +325,8 @@
                     outputfile: this.output_files,
                     prependfile: this.prepend,
                     appendfile: this.append,
-                    spj: this.spj
+                    spj: this.spj,
+                    solution: this.solution
                 }
                 if (typeof file === 'object') {
                     if (type === 'spj') {
@@ -375,6 +382,7 @@
 					for (let i = 0; i < _that.problem_list.length; ++i) {
 						const that = _that.problem_list[i]
 						const tmp = await (async () => {
+						    console.log(that)
 							inputFiles = await readFile(that.input_files)
 							outputFiles = await readFile(that.output_files)
 							prependFiles = await readFile(that.prepend)
@@ -418,7 +426,12 @@
 							console.log(err)
 						}
 						await fs.writeFileAsync(path.join(_path[0], 'problem.rpk'), result, () => {
+
 						})
+                        this.$electron.remote.dialog.showMessageBox({
+                            type: 'none',
+                            message: 'Problem.rpk has been generated!'
+                        })
 					})
 				})
 			}
@@ -451,7 +464,7 @@
 					} else if (_path.indexOf('spj') !== -1) {
 						that.spj = _path
 					} else if (_path.indexOf('solution') !== -1) {
-						that.solution = _path
+						that.solution.push(_path)
                     }
 					// console.log(that)
 				}
