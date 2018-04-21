@@ -1,5 +1,12 @@
 <template>
     <div id="app">
+        <div class="ui vertical center aligned segment" style="border-bottom:0px">
+            <div class="ui container">
+                <div class="ui inverted borderless large pointing menu" style="opacity:0">
+
+                </div>
+            </div>
+        </div>
         <div class="ui container">
             <div class="ui grid" @keyup="update_current" @change="update_current">
                 <div class="row">
@@ -270,6 +277,25 @@
 			show_problem: function (index) {
 				const t = this.problem_list[index]
 				this.current_tag = index
+                Object.assign(this, {
+                  title: '',
+                  time: 0,
+                  memory: 0,
+                  source: '',
+                  description: '',
+                  input: '',
+                  output: '',
+                  label: '',
+                  sample_input: '',
+                  sample_output: '',
+                  hint: '',
+                  input_files: [],
+                  output_files: [],
+                  prepend: [],
+                  append: [],
+                  solution: [],
+                  spj: ''
+                })
 				Object.assign(this, t)
 			},
 			load: function () {
@@ -280,7 +306,7 @@
 				this.$electron.ipcRenderer.on('selected-file', async (event, _path) => {
 					const fileName = _path[0]
 					const buffer = await fs.readFileAsync(fileName)
-					const unzipData = await new Promise((resolve, reject) => {
+					const unzipData = await new Promise(resolve => {
 						zlib.gunzip(buffer, (err, result) => {
 							if (err) {
 								console.log(err)
