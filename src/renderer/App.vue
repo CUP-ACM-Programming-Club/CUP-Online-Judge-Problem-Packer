@@ -179,6 +179,9 @@
                                 {{typeof item === "object" ? item.name : require('path').basename(item)}}
                                 <i class="icon close" @click="deleteFile(item,'solution')"></i>
                             </a>
+                            <a class="ui label" v-if="spj.length>0">
+                                {{typeof spj === "object" ? spj.name : require('path').basename(spj)}}
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -324,7 +327,7 @@
 						that.title = data.title
 						that.time = data.time
 						that.memory = data.memory
-						that.label = data.label.join(' ')
+						that.label = typeof data.label === 'object' && data.label.length > 0 ? data.label.join(' ') : ''
 						that.description = data.description
 						that.input = data.input
 						that.output = data.output
@@ -375,6 +378,7 @@
                 }
             },
 			pack: function () {
+			    this.save_current()
 				const _that = this
 				const fs = require('bluebird').promisifyAll(require('fs'))
 				this.$electron.ipcRenderer.send('open-save-file-dialog')
@@ -424,7 +428,7 @@
 							}
 							return {
 								title: that.title,
-								label: that.label ? that.label.split(' ') : '',
+								label: that.label ? that.label.split(' ') : [],
 								time: parseFloat(that.time),
 								memory: parseInt(that.memory),
 								description: that.description,
