@@ -1,6 +1,6 @@
 <template>
     <div id="app">
-        <div class="ui vertical center aligned segment" style="border-bottom:0px">
+        <div class="ui vertical center aligned segment" style="border-bottom:0">
             <div class="ui container">
                 <div class="ui inverted borderless large pointing menu" style="opacity:0">
 
@@ -30,7 +30,7 @@
                                :class="'ui primary basic button '+(current_tag === index-1?'active':'')"
                                v-for="index in Array.from(Array(problem_list.length ? problem_list.length : Object.values(problem_list).length).keys())">{{(index
                                 ===
-                                current_tag?title:problem_list[index].title)||'New Problem'}}</a>
+                                current_tag?title?title:'New Problem':index)}}</a>
                         </div>
                     </div>
                 </div>
@@ -211,6 +211,40 @@
 
 <script>
   /* eslint-disable indent,no-tabs,no-mixed-spaces-and-tabs */
+  import bluebird from "bluebird";
+  import _fs from "fs";
+  import zlib from "zlib";
+  import path from "path";
+
+  const fs = bluebird.promisifyAll(_fs);
+
+  function packToArray () {
+    if (arguments.length > 0) {
+      let cbArray = [];
+      for (let i of arguments) {
+        if (i && typeof i !== "string" && i.length && i.length > 0) {
+          cbArray.push(i);
+        }
+        else {
+          cbArray.push([i]);
+        }
+      }
+      return cbArray;
+    }
+    else {
+      return [];
+    }
+  }
+
+  function saveToFile (file_path, ...files) {
+    for (let i of files) {
+      if (typeof i !== "string" && i && i.length) {
+        for (let j of i) {
+          fs.writeFileSync(`${path}/${j.name}`, j.content);
+        }
+      }
+    }
+  }
 
   export default {
     name: "CUP_Online_Judge_Problem_Creator",
@@ -305,8 +339,6 @@
       },
       load: function () {
         const _that = this;
-        const fs = require("bluebird").promisifyAll(require("fs"));
-        const zlib = require("zlib");
         this.$electron.ipcRenderer.send("open-file-dialog");
         this.$electron.ipcRenderer.on("selected-file", async (event, _path) => {
           const fileName = _path[0];
@@ -355,6 +387,25 @@
           Object.assign(_that, _problemList[0]);
         });
       },
+      save_test_file: function () {
+        this.$electron.ipcRenderer.send("open-file-dialog");
+        this.$electron.ipcRenderer.on("selected-export-directory", async (event, export_path) => {
+          let input_file = this.input_files,
+            output_file = this.output_files,
+            prependfile = this.prepend_files,
+            appendfile = this.append_files,
+            spj = this.spj,
+            solution = this.solution;
+          const readFile = this.readFile;
+          [input_file, output_file, prependfile, appendfile, spj, solution] = packToArray(input_file, output_file,
+            prependfile, appendfile, spj, solution);
+          [input_file, output_file, prependfile, appendfile, spj, solution] = await Promise.all([
+            readFile(input_file), readFile(output_file), readFile(prependfile), readFile(appendfile),
+            readFile(spj), readFile(solution)
+          ]);
+          saveToFile(export_path, input_file, output_file, prependfile, appendfile, spj, solution);
+        });
+      },
       deleteFile: function (file, type) {
         const target = {
           inputfile: this.input_files,
@@ -384,10 +435,25 @@
           }
         }
       },
+      readFile: async (source) => {
+        let target = [];
+        for (let i of source) {
+          if (typeof i === "string") {
+            const content = await fs.readFileAsync(i);
+            const name = path.basename(i);
+            target.push({
+              name: name,
+              content: content.toString("base64")
+            });
+          } else {
+            target.push(i);
+          }
+        }
+        return target;
+      },
       pack: function () {
         this.save_current();
         const _that = this;
-        const fs = require("bluebird").promisifyAll(require("fs"));
         this.$electron.ipcRenderer.send("open-save-file-dialog");
         this.$electron.ipcRenderer.on("selected-directory", async (event, _path) => {
           let inputFiles = [];
@@ -396,26 +462,9 @@
           let appendFiles = [];
           let solutionFiles = [];
           let spj;
+          const readFile = this.readFile;
 
-          const readFile = async (source) => {
-            let target = [];
-            const path = require("path");
-            for (let i of source) {
-              if (typeof i === "string") {
-                const content = await fs.readFileAsync(i);
-                const name = path.basename(i);
-                target.push({
-                  name: name,
-                  content: content.toString("base64")
-                });
-              } else {
-                target.push(i);
-              }
-            }
-            return target;
-          };
           let result = [];
-          const path = require("path");
           for (let i = 0; i < _that.problem_list.length; ++i) {
             const that = _that.problem_list[i];
             const tmp = await (async () => {
@@ -463,7 +512,6 @@
           }
           // console.log(result)
           console.log(JSON.stringify(result));
-          const zlib = require("zlib");
           zlib.gzip(JSON.stringify(result), async (err, result) => {
             if (err) {
               console.log(err);

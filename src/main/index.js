@@ -23,6 +23,14 @@ ipcMain.on("open-file-dialog", function (event) {
 	});
 });
 
+ipcMain.on("export-test-file-dialog", function (event) {
+	dialog.showOpenDialog({
+		properties: ["openDirectory"]
+	}, function (path) {
+		if (path) event.sender.send("selected-export-directory", path);
+	});
+});
+
 let mainWindow;
 const winURL = process.env.NODE_ENV === "development"
 	? "http://localhost:9080"
