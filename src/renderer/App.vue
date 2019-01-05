@@ -256,6 +256,11 @@
     }
   }
 
+  process.on("uncaughtException", (err) => {
+    this.$electron.remote.dialog.showErrorBox("程序发生错误", `请把以下内容反馈给开发者。\n错误内容:${err}`);
+    //console.log("Caught exception: " + err);
+  });
+
   export default {
     name: "CUP_Online_Judge_Problem_Creator",
     data: function () {
