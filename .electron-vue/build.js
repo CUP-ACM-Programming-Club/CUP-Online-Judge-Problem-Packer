@@ -103,25 +103,22 @@ function pack (config) {
   })
 }
 
-function bundleApp () {
-  if (process.env.BUILD_ARCH !== 'ia32') {
-    packager(buildConfig, (err, appPaths) => {
-      if (err) {
-        console.log(`\n${errorLog}${chalk.yellow('`electron-packager`')} says...\n`)
-        console.log(err + '\n')
-      } else {
-        console.log(`\n${doneLog}\n`)
-      }
-    })
-  }
-  packager(buildConfigIa32, (err, appPaths) => {
+function packageHandler(config) {
+  packager(config, (err, appPaths) => {
     if (err) {
-      console.log(`\n${errorLog}${chalk.yellow('`electron-packager`')} for ia32 says...\n`)
+      console.log(`\n${errorLog}${chalk.yellow('`electron-packager`')} says...\n`)
       console.log(err + '\n')
     } else {
       console.log(`\n${doneLog}\n`)
     }
   })
+}
+
+function bundleApp () {
+  if (process.env.BUILD_ARCH !== 'ia32') {
+    packageHandler(buildConfig);
+  }
+  packageHandler(buildConfigIa32);
 }
 
 function web () {
